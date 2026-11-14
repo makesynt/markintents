@@ -30,6 +30,8 @@ url: https://example.com/
 
 提交到 `main` 后，[Actions](https://github.com/makesynt/markintents/actions) 自动校验并发布。失败时可在构建日志看到出错文件和原因；修复后重新提交。首页显示日期最新的资讯，其他日期进入归档。
 
+构建时会将最新一期和历史资讯分别生成：打开首页时只加载当期资讯和归档数量，打开归档或历史资讯链接时才加载历史资讯。同一次访问中再次打开归档会复用已加载的数据；网络失败时页面提供重试。
+
 ## 每周结音
 
 在 `weekly.js` 的 `WEEKLY_SONGS` 中参照现有记录添加周度内容，并将 `FEATURED_HOME_WEEK_ID` 改为首页要展示的周次。

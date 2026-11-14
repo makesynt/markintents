@@ -925,7 +925,7 @@
         var latestDot = formatShortDotDate(latestEditionDate);
 
         if (currentView === 'latest') {
-          var archiveCount = getArchiveItems().length;
+          var archiveCount = ARCHIVE_COUNTS[currentFilter];
           var archiveBtnHtml =
             '<button type="button" data-action="go-archive" class="archive-nav-btn inline-flex items-center gap-1.5 text-[12px] text-[var(--ink-muted)] hover:text-[var(--ink-primary)] transition-colors cursor-pointer focus:outline-none">' +
               '<span>浏览往期归档 (' + archiveCount + ')</span>' +
@@ -1018,6 +1018,11 @@
       });
 
       var latestEditionDate = sortedSignals.length > 0 ? sortedSignals[0].date : '2026-11-13';
+      var archiveSignals = ARCHIVE_COUNTS.all === 0 ? [] : null;
+      var archivePromise = null;
+      var archiveError = false;
+      var pendingArchiveSlug = null;
+      var navigationVersion = 0;
       var currentView = 'latest';
       var currentFilter = 'all';
       var kbFocusIndex = -1;
@@ -1118,8 +1123,8 @@
       }
 
       function getArchiveItems() {
-        return sortedSignals.filter(function (item) {
-          return item.date !== latestEditionDate && matchesFilter(item, currentFilter);
+        return (archiveSignals || []).filter(function (item) {
+          return matchesFilter(item, currentFilter);
         });
       }
 
@@ -1155,6 +1160,14 @@
           return latestList.map(function (item, idx) {
             return renderSignalEntry(item, false, idx === latestList.length - 1);
           }).join('');
+        }
+
+        if (archiveSignals === null) {
+          if (archiveError) {
+            return '<div role="alert" class="py-10 text-[13px] text-[var(--ink-muted)]">归档加载失败，请检查网络后 ' +
+              '<button type="button" data-action="retry-archive" class="text-[var(--ink-primary)] underline underline-offset-4 cursor-pointer">重试</button>，或刷新页面。</div>';
+          }
+          return '<div role="status" class="py-10 text-[13px] text-[var(--ink-muted)]">正在加载往期归档…</div>';
         }
 
         var archiveList = getArchiveItems();
@@ -1256,8 +1269,13 @@
       function renderAll(withFade, scrollTop) {
         kbFocusIndex = -1;
         syncFilterTabs();
+        if (switchTimer) {
+          clearTimeout(switchTimer);
+          switchTimer = null;
+        }
 
         if (!withFade) {
+          signalStream.classList.remove('is-switching');
           renderArchiveTopBar();
           signalStream.innerHTML = renderStreamContent();
           renderBottomDockAndNav();
@@ -1266,7 +1284,6 @@
           return;
         }
 
-        if (switchTimer) clearTimeout(switchTimer);
         signalStream.classList.add('is-switching');
 
         switchTimer = setTimeout(function () {
@@ -1299,34 +1316,82 @@
         }
       }
 
+      function ensureArchiveLoaded() {
+        if (archiveSignals !== null) return Promise.resolve();
+        if (!archivePromise) {
+          archivePromise = fetch(ARCHIVE_URL).then(function (response) {
+            if (!response.ok) throw new Error('Archive request failed');
+            return response.json();
+          }).then(function (items) {
+            if (!Array.isArray(items)) throw new Error('Invalid archive data');
+            archiveSignals = items;
+            sortedSignals = SIGNALS.concat(items);
+          }).catch(function (error) {
+            archivePromise = null;
+            throw error;
+          });
+        }
+        return archivePromise;
+      }
+
+      function openArchive(slug, scrollTop) {
+        var requestVersion = ++navigationVersion;
+        currentView = 'archive';
+        pendingArchiveSlug = slug || null;
+        archiveError = false;
+        renderAll(false, scrollTop);
+        ensureArchiveLoaded().then(function () {
+          if (requestVersion !== navigationVersion || currentView !== 'archive') return;
+          var matchedSignal = slug ? findSignalBySlug(slug) : null;
+          if (slug && !matchedSignal) {
+            currentView = 'latest';
+          } else if (matchedSignal && !matchesFilter(matchedSignal, currentFilter)) {
+            currentFilter = 'all';
+          }
+          renderAll(false, false);
+          if (matchedSignal) requestAnimationFrame(function () {
+            if (requestVersion === navigationVersion) triggerPermalinkBreath(matchedSignal.slug, true);
+          });
+        }).catch(function () {
+          if (requestVersion !== navigationVersion || currentView !== 'archive') return;
+          archiveError = true;
+          renderAll(false, false);
+        });
+      }
+
       function switchEditionView(targetView, scrollTop) {
-        currentView = targetView;
         safeUpdateUrlHash(targetView === 'archive' ? 'archive' : '');
-        renderAll(true, scrollTop);
+        if (targetView === 'archive') {
+          openArchive(null, scrollTop);
+        } else {
+          navigationVersion++;
+          currentView = 'latest';
+          renderAll(true, scrollTop);
+        }
       }
 
       function syncStateFromHash(isInitialLoad) {
         var rawHash = (window.location.hash || '').replace(/^#/, '').trim();
 
         if (!rawHash) {
+          navigationVersion++;
           currentView = 'latest';
           renderAll(false, false);
           return;
         }
 
         if (rawHash === 'archive') {
-          currentView = 'archive';
-          renderAll(!isInitialLoad, false);
+          openArchive(null, false);
           return;
         }
 
-        var matchedSignal = findSignalBySlug(rawHash);
+        var matchedSignal = SIGNALS.find(function (item) { return item.slug === rawHash; });
         if (matchedSignal) {
-          var targetView = matchedSignal.date === latestEditionDate ? 'latest' : 'archive';
+          navigationVersion++;
           if (!matchesFilter(matchedSignal, currentFilter)) {
             currentFilter = 'all';
           }
-          currentView = targetView;
+          currentView = 'latest';
           renderAll(false, false);
           requestAnimationFrame(function () {
             triggerPermalinkBreath(matchedSignal.slug, true);
@@ -1334,8 +1399,7 @@
           return;
         }
 
-        currentView = 'latest';
-        renderAll(false, false);
+        openArchive(rawHash, false);
       }
 
       // ========================================================================
@@ -1425,6 +1489,8 @@
           switchEditionView('archive', true);
         } else if (action === 'go-latest') {
           switchEditionView('latest', true);
+        } else if (action === 'retry-archive') {
+          openArchive(pendingArchiveSlug, false);
         } else if (action === 'reset-filter') {
           currentFilter = 'all';
           renderAll(true, false);

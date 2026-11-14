@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const crypto = require('node:crypto');
 
 const root = path.resolve(__dirname, '..');
 const contentDir = path.join(root, 'content');
@@ -82,7 +83,25 @@ const signals = filesIn(contentDir).map(file => {
 }).sort((a, b) => b.date.localeCompare(a.date));
 if (!signals.length) throw new Error('No Markdown signals found in content/');
 fs.mkdirSync(outputDir, { recursive: true });
-const safeJson = JSON.stringify(signals, null, 2).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
-fs.writeFileSync(path.join(outputDir, 'content.js'), `${fs.readFileSync(path.join(root, 'weekly.js'), 'utf8')}\nvar SIGNALS = ${safeJson};\n`);
-fs.copyFileSync(path.join(root, 'index.html'), path.join(outputDir, 'index.html'));
+for (const name of fs.readdirSync(outputDir)) {
+  if (/^(?:content(?:-[0-9a-f]{16})?\.js|archive-[0-9a-f]{16}\.json)$/.test(name)) {
+    fs.unlinkSync(path.join(outputDir, name));
+  }
+}
+const latestDate = signals[0].date;
+const latest = signals.filter(signal => signal.date === latestDate);
+const archive = signals.filter(signal => signal.date !== latestDate);
+const archiveCounts = { all: archive.length, primitive: 0, insight: 0 };
+for (const signal of archive) archiveCounts[signal.kind]++;
+const safeJson = value => JSON.stringify(value, null, 2).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+const archiveJson = safeJson(archive);
+const digest = value => crypto.createHash('sha256').update(value).digest('hex').slice(0, 16);
+const archiveFile = `archive-${digest(archiveJson)}.json`;
+fs.writeFileSync(path.join(outputDir, archiveFile), archiveJson);
+const bootstrap = `${fs.readFileSync(path.join(root, 'weekly.js'), 'utf8')}\nvar SIGNALS = ${safeJson(latest)};\nvar ARCHIVE_COUNTS = ${safeJson(archiveCounts)};\nvar ARCHIVE_URL = ${JSON.stringify(archiveFile)};\n`;
+const contentFile = `content-${digest(bootstrap)}.js`;
+fs.writeFileSync(path.join(outputDir, contentFile), bootstrap);
+const page = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+if (!page.includes('src="content.js"')) throw new Error('Missing content.js script tag in index.html');
+fs.writeFileSync(path.join(outputDir, 'index.html'), page.replace('src="content.js"', `src="${contentFile}"`));
 console.log(`Built ${signals.length} signals into dist/`);

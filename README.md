@@ -2,6 +2,24 @@
 
 静态网站由 GitHub Actions 构建并部署到 GitHub Pages。每条资讯是一份 Markdown；`weekly.js` 保存每周结音；`index.html` 保存页面和交互。
 
+## 内容来源与选题
+
+MarkIntents 关注与 AI 有关的技术与组织议题，内容来源包括：
+
+- **AI 编程工具**：Cursor、Claude Code、Codex 等主流工具的官方更新日志、产品公告、文档和工程博客，例如 [Cursor 更新日志](https://cursor.com/changelog)、[Anthropic 工程博客](https://www.anthropic.com/engineering) 和 [OpenAI Codex 开发者博客](https://developers.openai.com/blog/topic/codex)。
+- **大模型厂商**：OpenAI、Anthropic（Claude）、DeepSeek、Google 等的官方新闻、文章、博客和文档，例如 [OpenAI 新闻](https://openai.com/news/)、[Anthropic 新闻](https://www.anthropic.com/news)、[DeepSeek 官方网站及文档](https://www.deepseek.com/)和 [Google AI 博客](https://blog.google/innovation-and-ai/technology/ai/)。
+- **管理与组织**：[《哈佛商业评论》](https://hbr.org/)中与 AI 相关的文章，关注技术应用对组织、管理和工作方式的影响。
+
+优先选择有明确来源、具有实质变化或可借鉴观点的内容。技术选题可涵盖模型能力、开发工具、Agent、工程实践和评估；组织选题可涵盖团队协作、管理方式、组织设计、人才与 AI 落地。无关的一般商业或产品宣传不纳入。上述来源是选题范围，并非每期都必须覆盖每家机构。
+
+## 内容整理与发布方式
+
+当前发布方式是维护者将资讯提交到仓库；GitHub Actions 负责检查文件格式、构建和发布网站，**不会自动搜集新闻、核实事实或生成摘要**。资讯的整理、AI 辅助和审核方式有待进一步确定。
+
+整理资讯时应链接具体原文，核对标题、日期、事实和数字，用自己的话概括其内容与意义；引用或指标应能在原文中找到，并清楚标明来源。对于需要订阅或无法访问全文的文章，只根据实际可核实的内容整理，避免推测。`primitive` 用于记录具体能力、产品或技术变化，`insight` 用于记录实践经验、观点或组织影响。
+
+当前仓库沿用原型中的示例资讯，它们尚未逐条完成事实核验，不能仅凭本说明视为已核实内容。
+
 ## 添加资讯
 
 在 GitHub 的 `content/` 中新建以 `.md` 结尾的文件，可以按年份周次建目录，如 `content/2026-W46/agent-update.md`。目录只用于整理；日期对应的 ISO 周次和周范围由构建程序自动计算。文件示例（示例内容和链接请替换）：

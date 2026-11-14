@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MarkIntents — Primitives &amp; Insights</title>
+
+  <!-- Adaptive Louvered-Prism Favicon (Variant A · Light & Dark Browser Tabs) -->
+  <link
+    rel="icon"
+    type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22' fill='none'%3E%3Cstyle%3E.ink-fill%7Bfill:%23171715%7D.ink-stroke%7Bstroke:%23171715%7D.accent-stroke%7Bstroke:%233B5B78%7D@media (prefers-color-scheme:dark)%7B.ink-fill%7Bfill:%23F8F7F3%7D.ink-stroke%7Bstroke:%23F8F7F3%7D.accent-stroke%7Bstroke:%237BA3C4%7D%7D%3C/style%3E%3Cpath class='ink-fill' d='M11 1.6L2.2 11L11 20.4V13.9A2.9 2.9 0 0 1 11 8.1V1.6Z'/%3E%3Cpath class='ink-stroke' d='M13.35 4.1V17.9' stroke-width='1.65' stroke-linecap='round'/%3E%3Cpath class='ink-stroke' d='M15.85 6.75V15.25' stroke-width='1.55' stroke-linecap='round'/%3E%3Cpath class='accent-stroke' d='M18.35 9.4V12.6' stroke-width='1.55' stroke-linecap='round'/%3E%3C/svg%3E"
+  />
+
+  <!-- Typography: Inter, Newsreader (Optical Serif + Italic), Noto Serif SC, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,400&family=Noto+Serif+SC:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Zero-FOUC Theme Initialization (System Preference + Local Override) -->
+  <script src="content.js"></script>
+  <script>
+    (function () {
+      var saved = null;
+      try {
+        saved = localStorage.getItem('markintents-theme');
+      } catch (e) {}
+      var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var theme = saved === 'dark' || saved === 'light' ? saved : (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <style>
+    /* ==========================================================================
+       Dual Theme System: Cotton Paper (Light) & Warm Obsidian (Dark)
+       ========================================================================== */
+    :root,
+    html[data-theme="light"] {
+      color-scheme: light;
+      --bg-paper: #F8F7F3;
+      --bg-masthead: rgba(248, 247, 243, 0.90);
+      --ink-primary: #171715;
+      --ink-body: #2C2C29;
+      --ink-secondary: #575652;
+      --ink-muted: #787670;
+      --border-hairline: #E6E4DD;
+      --border-quote: #D2CFC6;
+      --border-colophon: #DCD9D0;
+      --dot-sep: #C7C4BB;
+      --token-bg: #EFECE6;
+      --dock-bg: #F0EEE7;
+      --selection-bg: #E5E2D9;
+      --underline-hover: #C9C6BD;
+      --breath-peak: rgba(231, 228, 218, 0.72);
+      --color-primitive: #3B5B78;
+      --color-insight: #2E6053;
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg-paper: #131312;
+      --bg-masthead: rgba(19, 19, 18, 0.88);
+      --ink-primary: #ECEAE4;
+      --ink-body: #C2C0B8;
+      --ink-secondary: #9A9890;
+      --ink-muted: #7E7C75;
+      --border-hairline: #252421;
+      --border-quote: #383631;
+      --border-colophon: #2E2D29;
+      --dot-sep: #4A4842;
+      --token-bg: #20201D;
+      --dock-bg: #1B1B19;
+      --selection-bg: #2E2D28;
+      --underline-hover: #57554E;
+      --breath-peak: rgba(236, 234, 228, 0.08);
+      --color-primitive: #7BA3C7;
+      --color-insight: #63AB97;
+    }
+
+    html {
+      background-color: var(--bg-paper);
+      color: var(--ink-primary);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      scroll-behavior: smooth;
+      transition: background-color 180ms ease, color 180ms ease;
+    }
+
+    body {
+      margin: 0;
+      background-color: var(--bg-paper);
+      color: var(--ink-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', sans-serif;
+      transition: background-color 180ms ease, color 180ms ease;
+    }
+
+    ::selection {
+      background-color: var(--selection-bg);
+      color: var(--ink-primary);
+    }
+
+    .font-serif-en {
+      font-family: 'Newsreader', Georgia, 'Times New Roman', serif;
+    }
+
+    .font-serif-cn {
+      font-family: 'Noto Serif SC', 'Songti SC', 'STSong', serif;
+    }
+
+    .font-mono-tech {
+      font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Inline code, protocol primitives & numeric metrics */
+    .inline-token {
+      font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      background-color: var(--token-bg);
+      color: var(--ink-primary);
+      padding: 1px 4px;
+      border-radius: 3px;
+      letter-spacing: -0.015em;
+    }
+
+    /* ==========================================================================
+       1:1 Native Pixel-Grid Icon Micro-Physics
+       ========================================================================== */
+    /* Brand Mark (Variant A · Louvered Prism): Subtle horizontal light-refraction glide */
+    .brand-trigger .logo-louver-bars {
+      transition: transform 360ms var(--ease-out-expo);
+    }
+
+    .brand-trigger:hover .logo-louver-bars {
+      transform: translateX(0.9px);
+    }
+
+    /* Theme Toggle Button & Icon Visibility */
+    .theme-toggle-btn {
+      color: var(--ink-muted);
+      transition: color 160ms ease, transform 240ms var(--ease-out-expo);
+    }
+
+    .theme-toggle-btn:hover {
+      color: var(--ink-primary);
+    }
+
+    html[data-theme="dark"] .icon-moon {
+      display: none;
+    }
+
+    html:not([data-theme="dark"]) .icon-sun {
+      display: none;
+    }
+
+    /* Outbound 11x11 Diagonal Arrow: 45-degree damped glide */
+    .entry-headline-link .outbound-arrow {
+      opacity: 0.44;
+      color: var(--ink-muted);
+      transform: translate(0, 0);
+      transition: transform 240ms var(--ease-out-expo), opacity 200ms ease, color 200ms ease;
+    }
+
+    .entry-headline-link:hover .outbound-arrow,
+    .signal-entry.is-kb-focused .outbound-arrow {
+      opacity: 1;
+      color: var(--ink-primary);
+      transform: translate(1.5px, -1.5px);
+    }
+
+    .entry-headline-link:hover .headline-text {
+      text-decoration: underline;
+      text-decoration-color: var(--underline-hover);
+      text-underline-offset: 3.5px;
+      text-decoration-thickness: 1px;
+    }
+
+    /* Horizontal 12x12 Archive Navigation Arrows: 2.5px damped shift */
+    .nav-arrow-right,
+    .nav-arrow-left {
+      transform: translateX(0);
+      transition: transform 240ms var(--ease-out-expo), color 180ms ease;
+    }
+
+    .archive-nav-btn:hover .nav-arrow-right {
+      transform: translateX(2.5px);
+    }
+
+    .archive-nav-btn:hover .nav-arrow-left {
+      transform: translateX(-2.5px);
+    }
+
+    /* Top Filter Navigation Ink Underline */
+    .filter-tab {
+      position: relative;
+      color: var(--ink-muted);
+      transition: color 160ms ease;
+    }
+
+    .filter-tab:hover {
+      color: var(--ink-primary);
+    }
+
+    .filter-tab.is-active {
+      color: var(--ink-primary);
+      font-weight: 500;
+    }
+
+    .filter-tab.is-active::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -1px;
+      height: 1.5px;
+      background-color: var(--ink-primary);
+    }
+
+    /* Entry Silent J/K Focus Indicator & Clean Hash Permalink Breathing */
+    .signal-entry {
+      position: relative;
+      scroll-margin-top: 84px;
+      border-radius: 2px;
+    }
+
+    .signal-entry::before {
+      content: '';
+      position: absolute;
+      left: -14px;
+      top: 11px;
+      bottom: 11px;
+      width: 1.5px;
+      background-color: var(--ink-primary);
+      opacity: 0;
+      transform: scaleY(0.72);
+      transition: opacity 150ms ease, transform 180ms var(--ease-out-expo);
+    }
+
+    .signal-entry.is-kb-focused::before {
+      opacity: 1;
+      transform: scaleY(1);
+    }
+
+    @keyframes permalinkBreath {
+      0% {
+        background-color: transparent;
+      }
+      22% {
+        background-color: var(--breath-peak);
+      }
+      100% {
+        background-color: transparent;
+      }
+    }
+
+    .signal-entry.is-permalink-target {
+      animation: permalinkBreath 1.85s var(--ease-out-expo) forwards;
+    }
+
+    /* Smooth Stream Transition */
+    .stream-fade {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 140ms ease, transform 160ms var(--ease-out-expo);
+    }
+
+    .stream-fade.is-switching {
+      opacity: 0;
+      transform: translateY(2px);
+    }
+
+    /* ==========================================================================
+       Weekly Ballad (Liner Notes & Minimalist Acoustic Player)
+       ========================================================================== */
+    .ballad-play-btn {
+      border: 1px solid var(--border-quote);
+      color: var(--ink-primary);
+      background-color: transparent;
+      transition: border-color 180ms ease, background-color 180ms ease, transform 200ms var(--ease-out-expo);
+    }
+
+    .ballad-play-btn:hover {
+      border-color: var(--ink-primary);
+      background-color: var(--token-bg);
+    }
+
+    .ballad-play-btn:active {
+      transform: scale(0.95);
+    }
+
+    .ballad-progress-track {
+      position: relative;
+      height: 14px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .ballad-progress-rail {
+      width: 100%;
+      height: 1.5px;
+      background-color: var(--border-hairline);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ballad-progress-fill {
+      height: 100%;
+      background-color: var(--ink-primary);
+      width: 0%;
+      transition: width 90ms linear;
+    }
+
+    .lyric-viewport {
+      height: 22px;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .lyric-reel {
+      transition: transform 440ms var(--ease-out-expo);
+      will-change: transform;
+    }
+
+    .lyric-reel-item {
+      height: 22px;
+      line-height: 22px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--ink-secondary);
+      transition: color 240ms ease, opacity 240ms ease;
+    }
+
+    .lyric-reel-item.is-active {
+      color: var(--ink-primary);
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <!-- Golden Reading Measure Container: Full-Height Flex Column -->
+  <div class="min-h-screen flex flex-col max-w-[760px] mx-auto px-6">
+
+    <!-- ========================================================================
+         1. Sticky Minimal Masthead
+         ======================================================================== -->
+    <header
+      class="sticky top-0 z-20 backdrop-blur-md pt-5 sm:pt-6 border-b border-[var(--border-hairline)]"
+      style="background-color: var(--bg-masthead);"
+    >
+      <div class="flex items-center justify-between gap-4 pb-2.5">
+        <!-- Left: 22x22 Louvered Prism Brand Mark + 17px Wordmark + Latest Edition Micro-Date -->
+        <div class="flex items-center gap-2.5">
+          <button
+            type="button"
+            id="brandHomeBtn"
+            class="brand-trigger inline-flex items-center gap-2.5 text-left text-[var(--ink-primary)] focus:outline-none cursor-pointer"
+            title="返回当期信号"
+          >
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" class="block shrink-0" aria-hidden="true">
+              <path d="M11 1.6L2.2 11L11 20.4V13.9A2.9 2.9 0 0 1 11 8.1V1.6Z" fill="currentColor" />
+              <g class="logo-louver-bars">
+                <path d="M13.35 4.1V17.9" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" />
+                <path d="M15.85 6.75V15.25" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" />
+                <path d="M18.35 9.4V12.6" stroke="var(--color-primitive)" stroke-width="1.45" stroke-linecap="round" />
+              </g>
+            </svg>
+
+            <span class="font-serif-en text-[17px] font-semibold tracking-[-0.02em] text-[var(--ink-primary)] leading-none">
+              MarkIntents
+            </span>
+          </button>
+
+          <!-- Micro Latest Active Signal Date Indicator -->
+          <span
+            id="mastheadEditionBadge"
+            class="font-mono-tech text-[11.5px] text-[var(--ink-muted)] select-none leading-none pt-[1px]"
+          >
+            · 11.13
+          </span>
+        </div>
+
+        <!-- Right: Pure Text Filter + 13x13 Native Pixel-Grid Theme Toggle -->
+        <div class="flex items-center gap-4 sm:gap-5">
+          <nav aria-label="内容维度筛选" class="flex items-center gap-4 sm:gap-5 text-[12.5px]">
+            <button type="button" data-filter="all" class="filter-tab is-active py-1 cursor-pointer focus:outline-none">
+              全部
+            </button>
+            <button type="button" data-filter="primitive" class="filter-tab inline-flex items-center gap-1.5 py-1 cursor-pointer focus:outline-none">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="block shrink-0 text-[var(--color-primitive)]" aria-hidden="true">
+                <path d="M6 1.25L10.4 3.7L6 6.15L1.6 3.7L6 1.25Z" fill="currentColor" fill-opacity="0.92" />
+                <path d="M1.6 3.7V8.3L6 10.75L10.4 8.3V3.7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M6 6.15V10.75" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+              </svg>
+              <span>Primitives</span>
+            </button>
+            <button type="button" data-filter="insight" class="filter-tab inline-flex items-center gap-1.5 py-1 cursor-pointer focus:outline-none">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="block shrink-0 text-[var(--color-insight)]" aria-hidden="true">
+                <circle cx="6" cy="6" r="4.75" stroke="currentColor" stroke-width="1.2" />
+                <path d="M1.25 6H2.55M9.45 6H10.75" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" />
+                <circle cx="6" cy="6" r="1.85" fill="currentColor" />
+              </svg>
+              <span>Insights</span>
+            </button>
+          </nav>
+
+          <span class="h-3 w-[1px] bg-[var(--border-hairline)] select-none" aria-hidden="true"></span>
+
+          <button
+            type="button"
+            id="themeToggleBtn"
+            class="theme-toggle-btn p-1 -mr-1 cursor-pointer focus:outline-none"
+            aria-label="切换深浅色主题 (T)"
+            title="切换深浅色主题 (T)"
+          >
+            <!-- 13x13 Crescent Moon (Shown in Light Mode) -->
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" class="icon-moon block" aria-hidden="true">
+              <path
+                d="M10.85 8.15A4.75 4.75 0 0 1 4.85 2.15a4.75 4.75 0 1 0 6 6Z"
+                stroke="currentColor"
+                stroke-width="1.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <!-- 13x13 Precision Sun Aperture (Shown in Dark Mode) -->
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" class="icon-sun block" aria-hidden="true">
+              <circle cx="6.5" cy="6.5" r="2.45" stroke="currentColor" stroke-width="1.2" />
+              <path
+                d="M6.5 1.15V2.35M6.5 10.65V11.85M1.15 6.5H2.35M10.65 6.5H11.85M2.72 2.72L3.56 3.56M9.44 9.44L10.28 10.28M10.28 2.72L9.44 3.56M3.56 9.44L2.72 10.28"
+                stroke="currentColor"
+                stroke-width="1.15"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ========================================================================
+         2. Archive Return Context Bar (Rendered Only in Archive Mode)
+         ======================================================================== -->
+    <div id="archiveContextBar" class="hidden pt-4 pb-2 border-b border-[var(--border-hairline)]">
+      <!-- Rendered dynamically when viewing archive -->
+    </div>
+
+    <!-- ========================================================================
+         3. Full-Width Compact Signal Stream
+         ======================================================================== -->
+    <main id="signalStream" class="stream-fade pt-0.5" aria-live="polite">
+      <!-- Synchronously hydrated below -->
+    </main>
+
+    <!-- Elastic Breathing Spacer Between Today's Stream and Bottom Zone -->
+    <div id="streamBottomSpacer" class="flex-1 min-h-[72px] sm:min-h-[104px]" aria-hidden="true"></div>
+
+    <!-- ========================================================================
+         4. Bottom Zone: [Audio + Browse Archive] Above, [Colophon Quotes] Very Bottom
+         ======================================================================== -->
+    <div
+      id="bottomAnchorZone"
+      class="mt-auto sm:sticky sm:bottom-0 z-20 pt-3 backdrop-blur-md"
+      style="background: linear-gradient(to bottom, transparent 0%, var(--bg-masthead) 14%, var(--bg-paper) 34%);"
+    >
+      <!-- Unified Weekly Audio + Browse Archive Dock (Placed Above Colophon) -->
+      <section id="bottomDock" aria-label="周度曲目与往期归档">
+        <!-- Synchronously hydrated below -->
+      </section>
+
+      <!-- Archive Mode Return Link (Only Visible in Archive View, Above Colophon) -->
+      <div id="archiveFooterNav" class="hidden pb-1"></div>
+
+      <!-- Pure Colophon: Bilingual Philosophical Epigraphs Right-Aligned at the Absolute Bottom -->
+      <footer id="colophonFooter" class="pt-4 pb-5 sm:pb-6 flex flex-col items-end text-right">
+        <div class="w-8 border-t border-[var(--border-colophon)] mb-3" aria-hidden="true"></div>
+        <p class="font-serif-cn text-[13px] tracking-[0.16em] text-[var(--ink-body)] leading-relaxed m-0">
+          <span class="tracking-normal">“</span>不行而知，不见而名，不为而成<span class="tracking-normal -mr-[0.42em]">。</span><span class="tracking-normal">”</span>
+        </p>
+        <p class="font-serif-en italic text-[12.5px] text-[var(--ink-muted)] mt-1 leading-relaxed m-0">
+          “He who looks outside, dreams; he who looks inside, awakes.”
+        </p>
+      </footer>
+    </div>
+
+  </div>
+
+  <script>
+    (function () {
+      // ========================================================================
+      // Text Escaping, Inline Monospace Token Formatter & Helpers
+      // ========================================================================
+      function escapeHtml(str) {
+        return String(str == null ? '' : str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function formatInlineTokens(text) {
+        var escaped = escapeHtml(text);
+        return escaped.replace(/`([^`]+)`/g, '<code class="inline-token">$1</code>');
+      }
+
+      function formatShortDotDate(isoDate) {
+        var parts = String(isoDate || '').split('-');
+        return parts.length === 3 ? parts[1] + '.' + parts[2] : String(isoDate || '');
+      }
+
+      function matchesFilter(item, filter) {
+        if (filter === 'primitive' || filter === 'insight') {
+          return item.kind === filter;
+        }
+        return true;
+      }
+
+      function findSignalBySlug(slug) {
+        for (var i = 0; i < sortedSignals.length; i++) {
+          if (sortedSignals[i].slug === slug) return sortedSignals[i];
+        }
+        return null;
+      }
+
+      // ========================================================================
+      // DOM References & Runtime State Initialization
+      // ========================================================================
+      var brandHomeBtn = document.getElementById('brandHomeBtn');
+      var themeToggleBtn = document.getElementById('themeToggleBtn');
+      var mastheadEditionBadge = document.getElementById('mastheadEditionBadge');
+      var filterTabs = document.querySelectorAll('.filter-tab');
+      var archiveContextBar = document.getElementById('archiveContextBar');
+      var signalStream = document.getElementById('signalStream');
+      var archiveFooterNav = document.getElementById('archiveFooterNav');
+      var streamBottomSpacer = document.getElementById('streamBottomSpacer');
+      var bottomAnchorZone = document.getElementById('bottomAnchorZone');
+      var colophonFooter = document.getElementById('colophonFooter');
+      var bottomDock = document.getElementById('bottomDock');
+
+      // ========================================================================
+      // 1:1 Native Pixel-Grid SVG Icons
+      // ========================================================================
+      var ICON_PRIMITIVE_12 =
+        '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="block shrink-0" aria-hidden="true">' +
+          '<path d="M6 1.25L10.4 3.7L6 6.15L1.6 3.7L6 1.25Z" fill="currentColor" fill-opacity="0.92"/>' +
+          '<path d="M1.6 3.7V8.3L6 10.75L10.4 8.3V3.7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>' +
+          '<path d="M6 6.15V10.75" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>' +
+        '</svg>';
+
+      var ICON_INSIGHT_12 =
+        '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="block shrink-0" aria-hidden="true">' +
+          '<circle cx="6" cy="6" r="4.75" stroke="currentColor" stroke-width="1.2"/>' +
+          '<path d="M1.25 6H2.55M9.45 6H10.75" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>' +
+          '<circle cx="6" cy="6" r="1.85" fill="currentColor"/>' +
+        '</svg>';
+
+      var ICON_BALLAD_12 =
+        '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="block shrink-0" aria-hidden="true">' +
+          '<path d="M1.75 6.2V5.8M4.0 3.6V8.4M6.25 1.85V10.15M8.5 4.1V7.9M10.5 5.4V6.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>' +
+        '</svg>';
+
+      var ICON_OUTBOUND_11 =
+        '<svg width="11" height="11" viewBox="0 0 11 11" fill="none" class="outbound-arrow inline-block ml-1 align-[-1px]" aria-hidden="true">' +
+          '<path d="M2.75 8.25L8.25 2.75M8.25 2.75H3.85M8.25 2.75V7.15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '</svg>';
+
+      var ICON_ARROW_LEFT_12 =
+        '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="nav-arrow-left block shrink-0" aria-hidden="true">' +
+          '<path d="M9.75 6H2.25M2.25 6L5.25 3M2.25 6L5.25 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '</svg>';
+
+      var ICON_ARROW_RIGHT_12 =
+        '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="nav-arrow-right block shrink-0" aria-hidden="true">' +
+          '<path d="M2.25 6H9.75M9.75 6L6.75 3M9.75 6L6.75 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '</svg>';
+
+      var ICON_PLAY_10 =
+        '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" class="block translate-x-[0.5px]" aria-hidden="true">' +
+          '<path d="M2.6 1.85L8.15 5L2.6 8.15V1.85Z" fill="currentColor"/>' +
+        '</svg>';
+
+      var ICON_PAUSE_10 =
+        '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" class="block" aria-hidden="true">' +
+          '<rect x="2.35" y="1.9" width="1.8" height="6.2" rx="0.45" fill="currentColor"/>' +
+          '<rect x="5.85" y="1.9" width="1.8" height="6.2" rx="0.45" fill="currentColor"/>' +
+        '</svg>';
+
+      // ========================================================================
+      // Multi-Week Web Audio Felt-Piano / Ambient Synth Engine (Zero External MP3)
+      // ========================================================================
+      var audioCtx = null;
+      var masterGain = null;
+      var activeSongId = FEATURED_HOME_WEEK_ID;
+      var songPlaying = false;
+      var songProgressMap = {};
+      var songRafId = null;
+      var lastFrameTs = 0;
+      var lastTriggeredStep = -1;
+
+      function getSongById(songId) {
+        return WEEKLY_SONGS[songId] || WEEKLY_SONGS[FEATURED_HOME_WEEK_ID];
+      }
+
+      function getSongElapsed(songId) {
+        return songProgressMap[songId] || 0;
+      }
+
+      function setSongElapsed(songId, val) {
+        songProgressMap[songId] = val;
+      }
+
+      function ensureAudioContext() {
+        if (!audioCtx) {
+          var AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextCtor) return null;
+          audioCtx = new AudioContextCtor();
+          masterGain = audioCtx.createGain();
+          masterGain.gain.value = 0.24;
+          masterGain.connect(audioCtx.destination);
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        return audioCtx;
+      }
+
+      function playWarmTone(freq, durationSec, volume, delaySec) {
+        if (!audioCtx || !masterGain || !freq) return;
+        var now = audioCtx.currentTime + (delaySec || 0);
+
+        var osc = audioCtx.createOscillator();
+        var subOsc = audioCtx.createOscillator();
+        var filter = audioCtx.createBiquadFilter();
+        var env = audioCtx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now);
+
+        subOsc.type = 'sine';
+        subOsc.frequency.setValueAtTime(freq * 2, now);
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(920, now);
+        filter.frequency.exponentialRampToValueAtTime(340, now + durationSec);
+
+        env.gain.setValueAtTime(0.0001, now);
+        env.gain.linearRampToValueAtTime(volume, now + 0.045);
+        env.gain.exponentialRampToValueAtTime(0.0008, now + durationSec);
+
+        var overtoneGain = audioCtx.createGain();
+        overtoneGain.gain.value = 0.14;
+
+        osc.connect(filter);
+        subOsc.connect(overtoneGain);
+        overtoneGain.connect(filter);
+        filter.connect(env);
+        env.connect(masterGain);
+
+        osc.start(now);
+        subOsc.start(now);
+        osc.stop(now + durationSec + 0.05);
+        subOsc.stop(now + durationSec + 0.05);
+      }
+
+      function triggerMusicalStep(song, stepIndex) {
+        if (!song || !ensureAudioContext()) return;
+        var chords = song.chords;
+        var melody = song.melody;
+        var measureIndex = Math.floor(stepIndex / 4) % chords.length;
+        var beatInMeasure = stepIndex % 4;
+
+        if (beatInMeasure === 0) {
+          var chord = chords[measureIndex];
+          for (var i = 0; i < chord.length; i++) {
+            playWarmTone(chord[i], 5.6, i === 0 ? 0.22 : 0.11, i * 0.065);
+          }
+        }
+
+        var melodyFreq = melody[stepIndex % melody.length];
+        if (melodyFreq > 0) {
+          playWarmTone(melodyFreq, 2.6, 0.14, 0.02);
+        }
+      }
+
+      function formatClock(sec, maxDuration) {
+        var clamped = Math.max(0, Math.min(maxDuration, Math.floor(sec)));
+        var m = Math.floor(clamped / 60);
+        var s = clamped % 60;
+        return (m < 10 ? '0' + m : String(m)) + ':' + (s < 10 ? '0' + s : String(s));
+      }
+
+      function syncAllSongCardsUI() {
+        var cards = document.querySelectorAll('[data-song-card]');
+        for (var c = 0; c < cards.length; c++) {
+          var card = cards[c];
+          var songId = card.getAttribute('data-song-card');
+          var song = getSongById(songId);
+          if (!song) continue;
+
+          var isThisPlaying = songPlaying && activeSongId === songId;
+          var elapsed = getSongElapsed(songId);
+
+          var playBtn = card.querySelector('[data-song-toggle]');
+          var fillBar = card.querySelector('[data-song-fill]');
+          var timeLabel = card.querySelector('[data-song-clock]');
+          var lyricReel = card.querySelector('[data-lyric-reel]');
+          var lyricNodes = card.querySelectorAll('[data-lyric-idx]');
+
+          if (playBtn) {
+            playBtn.innerHTML = isThisPlaying ? ICON_PAUSE_10 : ICON_PLAY_10;
+            playBtn.setAttribute('aria-label', (isThisPlaying ? '暂停' : '播放') + song.title);
+          }
+          if (fillBar) {
+            var pct = Math.min(100, Math.max(0, (elapsed / song.duration) * 100));
+            fillBar.style.width = pct.toFixed(2) + '%';
+          }
+          if (timeLabel) {
+            timeLabel.textContent = (isThisPlaying || elapsed > 0)
+              ? formatClock(elapsed, song.duration) + ' / ' + formatClock(song.duration, song.duration)
+              : formatClock(song.duration, song.duration);
+          }
+
+          var activeIdx = 0;
+          for (var i = song.lyrics.length - 1; i >= 0; i--) {
+            if (elapsed >= song.lyrics[i].time) {
+              activeIdx = i;
+              break;
+            }
+          }
+
+          if (lyricReel) {
+            lyricReel.style.transform = 'translateY(-' + (activeIdx * 22) + 'px)';
+          }
+
+          for (var j = 0; j < lyricNodes.length; j++) {
+            var isCurrent = (isThisPlaying || elapsed > 0) && j === activeIdx;
+            lyricNodes[j].classList.toggle('is-active', isCurrent);
+          }
+        }
+      }
+
+      function tickSongPlayback(ts) {
+        if (!songPlaying) return;
+        var song = getSongById(activeSongId);
+        if (!song) return;
+
+        if (!lastFrameTs) lastFrameTs = ts;
+        var delta = (ts - lastFrameTs) / 1000;
+        lastFrameTs = ts;
+
+        var nextElapsed = getSongElapsed(activeSongId) + delta;
+        if (nextElapsed >= song.duration) {
+          setSongElapsed(activeSongId, 0);
+          songPlaying = false;
+          lastTriggeredStep = -1;
+          syncAllSongCardsUI();
+          return;
+        }
+
+        setSongElapsed(activeSongId, nextElapsed);
+        var currentStep = Math.floor(nextElapsed / 1.5);
+        if (currentStep !== lastTriggeredStep) {
+          lastTriggeredStep = currentStep;
+          triggerMusicalStep(song, currentStep);
+        }
+
+        syncAllSongCardsUI();
+        songRafId = requestAnimationFrame(tickSongPlayback);
+      }
+
+      function toggleSongPlayback(songId) {
+        var targetId = songId || activeSongId || FEATURED_HOME_WEEK_ID;
+        var song = getSongById(targetId);
+        if (!song) return;
+
+        if (songPlaying && activeSongId === targetId) {
+          songPlaying = false;
+          if (songRafId) {
+            cancelAnimationFrame(songRafId);
+            songRafId = null;
+          }
+          lastFrameTs = 0;
+          syncAllSongCardsUI();
+          return;
+        }
+
+        if (songRafId) {
+          cancelAnimationFrame(songRafId);
+          songRafId = null;
+        }
+
+        ensureAudioContext();
+        activeSongId = targetId;
+        var currentElapsed = getSongElapsed(targetId);
+        if (currentElapsed >= song.duration) {
+          currentElapsed = 0;
+          setSongElapsed(targetId, 0);
+        }
+
+        songPlaying = true;
+        lastFrameTs = 0;
+        var stepNow = Math.floor(currentElapsed / 1.5);
+        lastTriggeredStep = stepNow;
+        triggerMusicalStep(song, stepNow);
+
+        syncAllSongCardsUI();
+        songRafId = requestAnimationFrame(tickSongPlayback);
+      }
+
+      function seekSongTo(songId, targetSeconds, autoPlay) {
+        var targetId = songId || activeSongId || FEATURED_HOME_WEEK_ID;
+        var song = getSongById(targetId);
+        if (!song) return;
+
+        var clamped = Math.max(0, Math.min(song.duration - 0.05, targetSeconds));
+        setSongElapsed(targetId, clamped);
+        activeSongId = targetId;
+        lastTriggeredStep = Math.floor(clamped / 1.5);
+
+        if (autoPlay) {
+          ensureAudioContext();
+          triggerMusicalStep(song, lastTriggeredStep);
+          if (!songPlaying) {
+            songPlaying = true;
+            lastFrameTs = 0;
+            if (songRafId) cancelAnimationFrame(songRafId);
+            songRafId = requestAnimationFrame(tickSongPlayback);
+          }
+        }
+
+        syncAllSongCardsUI();
+      }
+
+      function renderSongPlayerMarkup(song, showWeekRangeMeta, rightAccessoryHtml) {
+        if (!song) return '';
+        var elapsed = getSongElapsed(song.id);
+        var isThisPlaying = songPlaying && activeSongId === song.id;
+
+        var reelItemsHtml = song.lyrics.map(function (line, idx) {
+          return (
+            '<p data-lyric-idx="' + idx + '" class="lyric-reel-item font-serif-cn text-[12.5px] m-0">' +
+              escapeHtml(line.text) +
+            '</p>'
+          );
+        }).join('');
+
+        var metaSuffixHtml = showWeekRangeMeta
+          ? '<span class="font-mono-tech text-[11px] text-[var(--ink-muted)]">' +
+              escapeHtml(song.weekCode + ' · ' + song.weekRange) +
+            '</span>'
+          : '';
+
+        var clockText = (isThisPlaying || elapsed > 0)
+          ? formatClock(elapsed, song.duration) + ' / ' + formatClock(song.duration, song.duration)
+          : formatClock(song.duration, song.duration);
+
+        var bottomLyricRowHtml = rightAccessoryHtml
+          ? '<div class="mt-1.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">' +
+              '<div data-lyric-viewport="' + escapeHtml(song.id) + '" class="lyric-viewport flex-1 min-w-0 pl-2.5 border-l-[1.5px] border-[var(--border-quote)]" title="点击播放或切换下一句歌词">' +
+                '<div data-lyric-reel="1" class="lyric-reel">' +
+                  reelItemsHtml +
+                '</div>' +
+              '</div>' +
+              '<div class="shrink-0 self-end sm:self-auto sm:pl-4">' +
+                rightAccessoryHtml +
+              '</div>' +
+            '</div>'
+          : '<div data-lyric-viewport="' + escapeHtml(song.id) + '" class="lyric-viewport mt-1.5 pl-2.5 border-l-[1.5px] border-[var(--border-quote)]" title="点击播放或切换下一句歌词">' +
+              '<div data-lyric-reel="1" class="lyric-reel">' +
+                reelItemsHtml +
+              '</div>' +
+            '</div>';
+
+        return (
+          '<div data-song-card="' + escapeHtml(song.id) + '">' +
+            '<div class="flex flex-wrap items-center justify-between gap-3">' +
+              '<div class="flex items-center gap-2">' +
+                '<button type="button" data-song-toggle="' + escapeHtml(song.id) + '" class="ballad-play-btn w-6 h-6 rounded-full inline-flex items-center justify-center shrink-0 cursor-pointer focus:outline-none" aria-label="播放' + escapeHtml(song.title) + '">' +
+                  (isThisPlaying ? ICON_PAUSE_10 : ICON_PLAY_10) +
+                '</button>' +
+                '<div class="flex items-baseline gap-1.5 flex-wrap">' +
+                  '<span class="inline-flex items-center self-center text-[var(--color-insight)] select-none" aria-hidden="true">' +
+                    ICON_BALLAD_12 +
+                  '</span>' +
+                  '<h4 class="text-[13.5px] font-semibold text-[var(--ink-primary)] tracking-[-0.01em] m-0">' +
+                    escapeHtml(song.title) +
+                  '</h4>' +
+                  metaSuffixHtml +
+                '</div>' +
+              '</div>' +
+              '<div class="flex items-center gap-2.5 w-full sm:w-auto sm:min-w-[152px]">' +
+                '<div data-song-scrub="' + escapeHtml(song.id) + '" class="ballad-progress-track flex-1 sm:w-24" title="点击跳转播放进度">' +
+                  '<div class="ballad-progress-rail">' +
+                    '<div data-song-fill="1" class="ballad-progress-fill"></div>' +
+                  '</div>' +
+                '</div>' +
+                '<span data-song-clock="1" class="font-mono-tech text-[11px] text-[var(--ink-muted)] select-none shrink-0">' +
+                  clockText +
+                '</span>' +
+              '</div>' +
+            '</div>' +
+            '<p class="text-[12.5px] text-[var(--ink-secondary)] leading-[1.55] mt-1.5 mb-0 truncate" title="' + escapeHtml(song.summary) + '">' +
+              escapeHtml(song.summary) +
+            '</p>' +
+            bottomLyricRowHtml +
+          '</div>'
+        );
+      }
+
+      function renderBottomDockAndNav() {
+        var latestDot = formatShortDotDate(latestEditionDate);
+
+        if (currentView === 'latest') {
+          var archiveCount = getArchiveItems().length;
+          var archiveBtnHtml =
+            '<button type="button" data-action="go-archive" class="archive-nav-btn inline-flex items-center gap-1.5 text-[12px] text-[var(--ink-muted)] hover:text-[var(--ink-primary)] transition-colors cursor-pointer focus:outline-none">' +
+              '<span>浏览往期归档 (' + archiveCount + ')</span>' +
+              ICON_ARROW_RIGHT_12 +
+            '</button>';
+
+          var featuredSong = getSongById(FEATURED_HOME_WEEK_ID);
+
+          if (bottomAnchorZone) {
+            bottomAnchorZone.className = 'mt-auto sm:sticky sm:bottom-0 z-20 pt-3 backdrop-blur-md';
+            bottomAnchorZone.style.background = 'linear-gradient(to bottom, transparent 0%, var(--bg-masthead) 14%, var(--bg-paper) 34%)';
+          }
+          if (archiveFooterNav) {
+            archiveFooterNav.classList.add('hidden');
+            archiveFooterNav.innerHTML = '';
+          }
+          if (streamBottomSpacer) {
+            streamBottomSpacer.className = 'flex-1 min-h-[72px] sm:min-h-[104px]';
+          }
+          if (colophonFooter) {
+            colophonFooter.className = 'pt-4 pb-5 sm:pb-6 flex flex-col items-end text-right';
+          }
+          if (bottomDock) {
+            bottomDock.classList.remove('hidden');
+            bottomDock.innerHTML =
+              '<div class="mb-2.5 flex items-center justify-start">' +
+                archiveBtnHtml +
+              '</div>' +
+              '<div class="rounded-lg px-4 py-3 transition-colors" style="background-color: var(--dock-bg);">' +
+                renderSongPlayerMarkup(featuredSong, true) +
+              '</div>';
+          }
+          syncAllSongCardsUI();
+          return;
+        }
+
+        // Archive view: each week renders its own song block; colophon remains at the very bottom
+        if (bottomAnchorZone) {
+          bottomAnchorZone.className = 'mt-auto pt-5';
+          bottomAnchorZone.style.background = 'transparent';
+        }
+        if (bottomDock) {
+          bottomDock.classList.add('hidden');
+          bottomDock.innerHTML = '';
+        }
+        if (streamBottomSpacer) {
+          streamBottomSpacer.className = 'flex-1 min-h-[36px]';
+        }
+        if (colophonFooter) {
+          colophonFooter.className = 'pt-4 pb-8 flex flex-col items-end text-right';
+        }
+        if (archiveFooterNav) {
+          archiveFooterNav.classList.remove('hidden');
+          archiveFooterNav.innerHTML =
+            '<button type="button" data-action="go-latest" class="archive-nav-btn inline-flex items-center gap-1.5 text-[12.5px] text-[var(--ink-muted)] hover:text-[var(--ink-primary)] transition-colors cursor-pointer focus:outline-none">' +
+              ICON_ARROW_LEFT_12 +
+              '<span>返回当期 (' + escapeHtml(latestDot) + ')</span>' +
+            '</button>';
+        }
+      }
+
+      function toggleTheme() {
+        var current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        var next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        try {
+          localStorage.setItem('markintents-theme', next);
+        } catch (e) {}
+      }
+
+      if (window.matchMedia) {
+        var darkMq = window.matchMedia('(prefers-color-scheme: dark)');
+        var handleSystemThemeChange = function (e) {
+          var hasExplicitPref = false;
+          try {
+            var stored = localStorage.getItem('markintents-theme');
+            hasExplicitPref = stored === 'dark' || stored === 'light';
+          } catch (err) {}
+          if (!hasExplicitPref) {
+            document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+          }
+        };
+        if (typeof darkMq.addEventListener === 'function') {
+          darkMq.addEventListener('change', handleSystemThemeChange);
+        }
+      }
+
+      var sortedSignals = SIGNALS.slice().sort(function (a, b) {
+        return b.date.localeCompare(a.date);
+      });
+
+      var latestEditionDate = sortedSignals.length > 0 ? sortedSignals[0].date : '2026-11-13';
+      var currentView = 'latest';
+      var currentFilter = 'all';
+      var kbFocusIndex = -1;
+      var switchTimer = null;
+
+      if (mastheadEditionBadge) {
+        mastheadEditionBadge.textContent = '· ' + formatShortDotDate(latestEditionDate);
+      }
+
+      // ========================================================================
+      // Primary Evidence Renderer (Full-Width Quote Block or Metrics Strip)
+      // ========================================================================
+      function renderEvidenceAnchor(evidence) {
+        if (!evidence || !evidence.type) return '';
+
+        if (evidence.type === 'quote' && evidence.text) {
+          var citeHtml = evidence.cite
+            ? '<span class="not-italic font-mono-tech text-[10.5px] text-[var(--ink-muted)] ml-2">— ' + escapeHtml(evidence.cite) + '</span>'
+            : '';
+
+          return (
+            '<blockquote class="m-0 pt-0.5 pl-2.5 border-l-[1.5px] border-[var(--border-quote)] font-serif-en italic text-[12.5px] text-[var(--ink-secondary)] leading-[1.52]">' +
+              '“' + escapeHtml(evidence.text) + '”' +
+              citeHtml +
+            '</blockquote>'
+          );
+        }
+
+        if (evidence.type === 'metrics' && Array.isArray(evidence.items) && evidence.items.length > 0) {
+          var metricsHtml = evidence.items
+            .map(function (m) {
+              return '<span>' + escapeHtml(m) + '</span>';
+            })
+            .join('<span class="text-[var(--dot-sep)] mx-2 select-none" aria-hidden="true">·</span>');
+
+          return (
+            '<div class="pt-0.5 font-mono-tech text-[11.5px] text-[var(--ink-secondary)] tracking-[-0.01em] leading-snug">' +
+              metricsHtml +
+            '</div>'
+          );
+        }
+
+        return '';
+      }
+
+      // ========================================================================
+      // Single Signal Card Renderer (Strictly Exclusive Single Attribute)
+      // ========================================================================
+      function renderSignalEntry(item, includeShortDate, isLastInGroup) {
+        var isInsight = item.kind === 'insight';
+        var badgeColor = isInsight ? 'text-[var(--color-insight)]' : 'text-[var(--color-primitive)]';
+        var badgeIcon = isInsight ? ICON_INSIGHT_12 : ICON_PRIMITIVE_12;
+        var badgeLabel = isInsight ? 'Insight' : 'Primitive';
+        var dividerClass = isLastInGroup ? '' : ' border-b border-[var(--border-hairline)]';
+
+        var metaLabel = includeShortDate
+          ? formatShortDotDate(item.date) + ' · ' + item.vendor + ' · ' + item.genre
+          : item.vendor + ' · ' + item.genre;
+
+        var summaryHtml =
+          '<p class="text-[13px] text-[var(--ink-body)] leading-[1.6] m-0">' +
+            '<span class="inline-flex items-center align-[-1.5px] ' + badgeColor + ' mr-1.5 select-none" title="' + badgeLabel + '" aria-label="' + badgeLabel + '">' +
+              badgeIcon +
+            '</span>' +
+            formatInlineTokens(item.summary) +
+          '</p>';
+
+        var evidenceHtml = renderEvidenceAnchor(item.evidence);
+
+        return (
+          '<article id="' + escapeHtml(item.slug) + '" class="signal-entry py-3 sm:py-3.5' + dividerClass + '" data-entry-url="' + escapeHtml(item.url) + '">' +
+            '<!-- Row 1: Flush-Left 14px Semibold Headline + Inline Vendor & Genre Meta -->' +
+            '<h2 class="text-[14px] font-semibold text-[var(--ink-primary)] leading-[1.45] tracking-[-0.01em] m-0">' +
+              '<a href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener noreferrer" class="entry-headline-link inline">' +
+                '<span class="headline-text">' + escapeHtml(item.title) + '</span>' +
+                ICON_OUTBOUND_11 +
+              '</a>' +
+              '<a href="#' + escapeHtml(item.slug) + '" data-slug-link="' + escapeHtml(item.slug) + '" class="inline-block font-mono-tech text-[11px] font-normal text-[var(--ink-muted)] hover:text-[var(--ink-primary)] transition-colors ml-2 whitespace-nowrap no-underline">' +
+                escapeHtml(metaLabel) +
+              '</a>' +
+            '</h2>' +
+            '<!-- Row 2: Strictly Single Run-In Attribute + Optional Primary Evidence -->' +
+            '<div class="mt-1.5 space-y-1">' +
+              summaryHtml +
+              evidenceHtml +
+            '</div>' +
+          '</article>'
+        );
+      }
+
+      // ========================================================================
+      // View Renderers: Latest Edition vs. Weekly Archive (With End-of-Week Coda)
+      // ========================================================================
+      function getLatestItems() {
+        return sortedSignals.filter(function (item) {
+          return item.date === latestEditionDate && matchesFilter(item, currentFilter);
+        });
+      }
+
+      function getArchiveItems() {
+        return sortedSignals.filter(function (item) {
+          return item.date !== latestEditionDate && matchesFilter(item, currentFilter);
+        });
+      }
+
+      function renderArchiveTopBar() {
+        var latestDot = formatShortDotDate(latestEditionDate);
+        if (currentView === 'archive') {
+          archiveContextBar.classList.remove('hidden');
+          archiveContextBar.innerHTML =
+            '<div class="flex items-center justify-between">' +
+              '<button type="button" data-action="go-latest" class="archive-nav-btn inline-flex items-center gap-1.5 text-[12.5px] text-[var(--ink-muted)] hover:text-[var(--ink-primary)] transition-colors cursor-pointer focus:outline-none">' +
+                ICON_ARROW_LEFT_12 +
+                '<span>返回当期 (' + escapeHtml(latestDot) + ')</span>' +
+              '</button>' +
+              '<span class="font-mono-tech text-[11px] text-[var(--ink-muted)] select-none">按周归档</span>' +
+            '</div>';
+        } else {
+          archiveContextBar.classList.add('hidden');
+          archiveContextBar.innerHTML = '';
+        }
+      }
+
+      function renderStreamContent() {
+        if (currentView === 'latest') {
+          var latestList = getLatestItems();
+          if (latestList.length === 0) {
+            return (
+              '<div class="py-10 flex items-center justify-between text-[13px] text-[var(--ink-muted)]">' +
+                '<span>当期暂无该维度条目</span>' +
+                '<button type="button" data-action="reset-filter" class="font-mono-tech text-[11.5px] text-[var(--ink-primary)] underline underline-offset-4 cursor-pointer">显示全部</button>' +
+              '</div>'
+            );
+          }
+          return latestList.map(function (item, idx) {
+            return renderSignalEntry(item, false, idx === latestList.length - 1);
+          }).join('');
+        }
+
+        var archiveList = getArchiveItems();
+        if (archiveList.length === 0) {
+          return (
+            '<div class="py-10 flex items-center justify-between text-[13px] text-[var(--ink-muted)]">' +
+              '<span>往期归档中暂无该维度条目</span>' +
+              '<button type="button" data-action="reset-filter" class="font-mono-tech text-[11.5px] text-[var(--ink-primary)] underline underline-offset-4 cursor-pointer">显示全部</button>' +
+            '</div>'
+          );
+        }
+
+        var weekOrder = [];
+        var groupedByWeek = {};
+        for (var i = 0; i < archiveList.length; i++) {
+          var item = archiveList[i];
+          var wKey = item.weekId || 'unknown-week';
+          if (!groupedByWeek[wKey]) {
+            groupedByWeek[wKey] = {
+              weekId: wKey,
+              weekCode: item.weekCode || '',
+              weekRange: item.weekRange || '',
+              items: []
+            };
+            weekOrder.push(wKey);
+          }
+          groupedByWeek[wKey].items.push(item);
+        }
+
+        return weekOrder
+          .map(function (wKey, idx) {
+            var group = groupedByWeek[wKey];
+            var topSpace = idx === 0 ? 'pt-4' : 'pt-9';
+            var weekSong = WEEKLY_SONGS[wKey];
+            var weekCodaHtml = weekSong
+              ? '<div class="mt-3 rounded-lg px-4 py-3 transition-colors" style="background-color: var(--dock-bg);">' +
+                  renderSongPlayerMarkup(weekSong, false) +
+                '</div>'
+              : '';
+
+            return (
+              '<section class="' + topSpace + '" aria-label="归档周次 ' + escapeHtml(group.weekCode + ' ' + group.weekRange) + '">' +
+                '<div class="pb-1.5 border-b border-[var(--border-hairline)] flex items-baseline justify-between">' +
+                  '<h3 class="font-mono-tech text-[11.5px] font-medium text-[var(--ink-secondary)] m-0">' +
+                    escapeHtml(group.weekCode) +
+                    '<span class="font-normal text-[var(--ink-muted)] ml-2">' + escapeHtml(group.weekRange) + '</span>' +
+                  '</h3>' +
+                  '<span class="font-mono-tech text-[11px] text-[var(--ink-muted)] select-none">' +
+                    group.items.length + (group.items.length === 1 ? ' signal' : ' signals') +
+                  '</span>' +
+                '</div>' +
+                group.items.map(function (entry, entryIdx) {
+                  return renderSignalEntry(entry, true, entryIdx === group.items.length - 1);
+                }).join('') +
+                weekCodaHtml +
+              '</section>'
+            );
+          })
+          .join('');
+      }
+
+      function syncFilterTabs() {
+        for (var i = 0; i < filterTabs.length; i++) {
+          var tab = filterTabs[i];
+          tab.classList.toggle('is-active', tab.getAttribute('data-filter') === currentFilter);
+        }
+      }
+
+      // ========================================================================
+      // Silent URL Slug Breathing & Keyboard J / K Navigation
+      // ========================================================================
+      function triggerPermalinkBreath(slug, shouldScroll) {
+        var targetEl = document.getElementById(slug);
+        if (!targetEl) return;
+
+        targetEl.classList.remove('is-permalink-target');
+        void targetEl.offsetWidth;
+        targetEl.classList.add('is-permalink-target');
+
+        if (shouldScroll) {
+          targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+
+      function getVisibleEntries() {
+        return signalStream.querySelectorAll('.signal-entry');
+      }
+
+      function applyKeyboardFocus() {
+        var nodes = getVisibleEntries();
+        for (var i = 0; i < nodes.length; i++) {
+          nodes[i].classList.toggle('is-kb-focused', i === kbFocusIndex);
+        }
+        if (kbFocusIndex >= 0 && kbFocusIndex < nodes.length) {
+          nodes[kbFocusIndex].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+      }
+
+      function renderAll(withFade, scrollTop) {
+        kbFocusIndex = -1;
+        syncFilterTabs();
+
+        if (!withFade) {
+          renderArchiveTopBar();
+          signalStream.innerHTML = renderStreamContent();
+          renderBottomDockAndNav();
+          syncAllSongCardsUI();
+          if (scrollTop) window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+
+        if (switchTimer) clearTimeout(switchTimer);
+        signalStream.classList.add('is-switching');
+
+        switchTimer = setTimeout(function () {
+          renderArchiveTopBar();
+          signalStream.innerHTML = renderStreamContent();
+          renderBottomDockAndNav();
+          syncAllSongCardsUI();
+
+          if (scrollTop) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+
+          requestAnimationFrame(function () {
+            signalStream.classList.remove('is-switching');
+          });
+        }, 125);
+      }
+
+      // Safely update URL hash across standard HTTPS, blob:, and sandboxed iframe origins
+      function safeUpdateUrlHash(cleanHash) {
+        var normalized = cleanHash ? String(cleanHash).replace(/^#/, '') : '';
+        try {
+          if (window.history && typeof window.history.replaceState === 'function') {
+            var baseUrl = String(window.location.href || '').split('#')[0];
+            var nextUrl = normalized ? baseUrl + '#' + normalized : baseUrl;
+            window.history.replaceState(null, '', nextUrl);
+          }
+        } catch (err) {
+          // Gracefully ignore History API restrictions in sandboxed or blob frames
+        }
+      }
+
+      function switchEditionView(targetView, scrollTop) {
+        currentView = targetView;
+        safeUpdateUrlHash(targetView === 'archive' ? 'archive' : '');
+        renderAll(true, scrollTop);
+      }
+
+      function syncStateFromHash(isInitialLoad) {
+        var rawHash = (window.location.hash || '').replace(/^#/, '').trim();
+
+        if (!rawHash) {
+          currentView = 'latest';
+          renderAll(false, false);
+          return;
+        }
+
+        if (rawHash === 'archive') {
+          currentView = 'archive';
+          renderAll(!isInitialLoad, false);
+          return;
+        }
+
+        var matchedSignal = findSignalBySlug(rawHash);
+        if (matchedSignal) {
+          var targetView = matchedSignal.date === latestEditionDate ? 'latest' : 'archive';
+          if (!matchesFilter(matchedSignal, currentFilter)) {
+            currentFilter = 'all';
+          }
+          currentView = targetView;
+          renderAll(false, false);
+          requestAnimationFrame(function () {
+            triggerPermalinkBreath(matchedSignal.slug, true);
+          });
+          return;
+        }
+
+        currentView = 'latest';
+        renderAll(false, false);
+      }
+
+      // ========================================================================
+      // Immediate Synchronous Hydration
+      // ========================================================================
+      syncStateFromHash(true);
+
+      // ========================================================================
+      // Event Delegation & Zero-Toast Keyboard Bindings
+      // ========================================================================
+      brandHomeBtn.addEventListener('click', function () {
+        if (currentView !== 'latest') {
+          switchEditionView('latest', true);
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      });
+
+      if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', toggleTheme);
+      }
+
+      for (var i = 0; i < filterTabs.length; i++) {
+        filterTabs[i].addEventListener('click', function () {
+          var nextFilter = this.getAttribute('data-filter');
+          if (nextFilter === currentFilter) return;
+          currentFilter = nextFilter;
+          renderAll(true, false);
+        });
+      }
+
+      document.addEventListener('click', function (e) {
+        var songToggleBtn = e.target.closest('[data-song-toggle]');
+        if (songToggleBtn) {
+          var targetSongId = songToggleBtn.getAttribute('data-song-toggle');
+          toggleSongPlayback(targetSongId);
+          return;
+        }
+
+        var scrubTrack = e.target.closest('[data-song-scrub]');
+        if (scrubTrack) {
+          var scrubSongId = scrubTrack.getAttribute('data-song-scrub');
+          var scrubSong = getSongById(scrubSongId);
+          var rect = scrubTrack.getBoundingClientRect();
+          var ratio = rect.width > 0 ? (e.clientX - rect.left) / rect.width : 0;
+          seekSongTo(scrubSongId, ratio * scrubSong.duration, true);
+          return;
+        }
+
+        var lyricViewport = e.target.closest('[data-lyric-viewport]');
+        if (lyricViewport) {
+          var viewportSongId = lyricViewport.getAttribute('data-lyric-viewport');
+          var viewportSong = getSongById(viewportSongId);
+          var isTargetPlaying = songPlaying && activeSongId === viewportSongId;
+
+          if (!isTargetPlaying) {
+            toggleSongPlayback(viewportSongId);
+          } else {
+            var elapsedNow = getSongElapsed(viewportSongId);
+            var curIdx = 0;
+            for (var k = viewportSong.lyrics.length - 1; k >= 0; k--) {
+              if (elapsedNow >= viewportSong.lyrics[k].time) {
+                curIdx = k;
+                break;
+              }
+            }
+            var nextIdx = (curIdx + 1) % viewportSong.lyrics.length;
+            seekSongTo(viewportSongId, viewportSong.lyrics[nextIdx].time, true);
+          }
+          return;
+        }
+
+        var slugLink = e.target.closest('[data-slug-link]');
+        if (slugLink) {
+          e.preventDefault();
+          var slug = slugLink.getAttribute('data-slug-link');
+          safeUpdateUrlHash(slug);
+          triggerPermalinkBreath(slug, false);
+          return;
+        }
+
+        var actionBtn = e.target.closest('[data-action]');
+        if (!actionBtn) return;
+        var action = actionBtn.getAttribute('data-action');
+
+        if (action === 'go-archive') {
+          switchEditionView('archive', true);
+        } else if (action === 'go-latest') {
+          switchEditionView('latest', true);
+        } else if (action === 'reset-filter') {
+          currentFilter = 'all';
+          renderAll(true, false);
+        }
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        var tag = document.activeElement ? document.activeElement.tagName : '';
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+        if (e.key === 't' || e.key === 'T') {
+          e.preventDefault();
+          toggleTheme();
+          return;
+        }
+
+        var entries = getVisibleEntries();
+        if (!entries.length) return;
+
+        if (e.key === 'j' || e.key === 'J') {
+          e.preventDefault();
+          kbFocusIndex = kbFocusIndex < entries.length - 1 ? kbFocusIndex + 1 : 0;
+          applyKeyboardFocus();
+        } else if (e.key === 'k' || e.key === 'K') {
+          e.preventDefault();
+          kbFocusIndex = kbFocusIndex > 0 ? kbFocusIndex - 1 : entries.length - 1;
+          applyKeyboardFocus();
+        } else if (e.key === 'Enter' && kbFocusIndex >= 0 && kbFocusIndex < entries.length) {
+          var targetUrl = entries[kbFocusIndex].getAttribute('data-entry-url');
+          if (targetUrl) {
+            window.open(targetUrl, '_blank', 'noopener,noreferrer');
+          }
+        } else if (e.key === 'Escape' && kbFocusIndex !== -1) {
+          kbFocusIndex = -1;
+          applyKeyboardFocus();
+        }
+      });
+
+      window.addEventListener('hashchange', function () {
+        syncStateFromHash(false);
+      });
+    })();
+  </script>
+</body>
+</html>
